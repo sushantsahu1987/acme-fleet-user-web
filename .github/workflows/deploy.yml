@@ -2,6 +2,9 @@ name: Build and Push to ACR
 
 on:
     workflow_dispatch:
+        inputs:
+            c8-report-token:
+              description: "C8 Report Token"
 
 env:
   REGISTRY_NAME: acmefleets.azurecr.io
@@ -30,3 +33,12 @@ jobs:
         context: .
         push: true
         tags: ${{ env.REGISTRY_NAME }}/${{ env.IMAGE_NAME }}:latest
+
+    - name: Report status back to C8
+      run: |
+        STARTED_AT=$(date -Iseconds)
+        curl -X POST \
+        -H "c8-report-token: ${{ inputs.c8-report-token }}" \
+        -H "Content-Type: application/json" \
+        https://app.configure8.io/self-service/api/v1/reports/webhook \
+        -d "{ \"status\": \"complete\",  \"startedAt\": \"$STARTED_AT\"}" \
